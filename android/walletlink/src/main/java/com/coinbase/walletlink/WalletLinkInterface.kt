@@ -3,6 +3,7 @@
 
 package com.coinbase.walletlink
 
+import com.coinbase.wallet.core.util.Optional
 import com.coinbase.walletlink.models.HostRequest
 import com.coinbase.walletlink.models.HostRequestId
 import com.coinbase.walletlink.models.ClientMetadataKey
@@ -103,7 +104,7 @@ interface WalletLinkInterface {
      *
      * @return A Single wrapping the HostRequest
      */
-    fun getRequest(eventId: String, sessionId: String, url: URL): Single<HostRequest>
+    fun getRequest(eventId: String, sessionId: String, url: URL): Single<Optional<HostRequest>>
 
     /**
      * Mark requests as seen to prevent future presentation

@@ -10,6 +10,7 @@ import com.coinbase.wallet.core.extensions.unwrap
 import com.coinbase.wallet.core.extensions.zipOrEmpty
 import com.coinbase.wallet.core.util.BoundedSet
 import com.coinbase.wallet.core.util.Optional
+import com.coinbase.wallet.core.util.toOptional
 import com.coinbase.walletlink.apis.WalletLinkConnection
 import com.coinbase.walletlink.exceptions.WalletLinkException
 import com.coinbase.walletlink.models.HostRequest
@@ -128,12 +129,12 @@ class WalletLink(private val notificationUrl: URL, context: Context) : WalletLin
         .zipOrEmpty()
         .asUnit()
 
-    override fun getRequest(eventId: String, sessionId: String, url: URL): Single<HostRequest> {
+    override fun getRequest(eventId: String, sessionId: String, url: URL): Single<Optional<HostRequest>> {
         val session = linkRepository.getSession(sessionId, url)
             ?: return Single.error(WalletLinkException.SessionNotFound)
 
         return linkRepository.getPendingRequests(session)
-            .map { requests -> requests.first { eventId == it.hostRequestId.eventId } }
+            .map { requests -> requests.firstOrNull { eventId == it.hostRequestId.eventId }.toOptional() }
     }
 
     // MARK: - Helpers
