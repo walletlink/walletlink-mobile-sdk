@@ -10,7 +10,6 @@ import com.coinbase.wallet.core.extensions.unwrap
 import com.coinbase.wallet.core.extensions.zipOrEmpty
 import com.coinbase.wallet.core.util.BoundedSet
 import com.coinbase.wallet.core.util.Optional
-import com.coinbase.wallet.core.util.toOptional
 import com.coinbase.walletlink.apis.WalletLinkConnection
 import com.coinbase.walletlink.exceptions.WalletLinkException
 import com.coinbase.walletlink.models.HostRequest
