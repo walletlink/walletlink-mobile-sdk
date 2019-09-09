@@ -23,4 +23,5 @@ Pod::Spec.new do |s|
   s.dependency 'BigInt'
   s.dependency 'CBCore'
   s.dependency 'CBDatabase'
+  s.dependency 'RxSwift'
 end
