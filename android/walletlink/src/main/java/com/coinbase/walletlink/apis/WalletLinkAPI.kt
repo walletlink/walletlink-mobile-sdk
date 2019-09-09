@@ -27,7 +27,7 @@ internal class WalletLinkAPI {
      * @return A Single wrapping a ServerRequestDTO
      */
     fun markEventAsSeen(eventId: String, sessionId: String, secret: String, url: URL): Single<Unit> = HTTP
-        .post(
+        .post<ByteArray>(
             service = HTTPService(url),
             path = "/events/$eventId/seen",
             credentials = Credentials.create(sessionId = sessionId, secret = secret)
@@ -44,12 +44,11 @@ internal class WalletLinkAPI {
      * @return A Single wrapping a list of encrypted host requests
      */
     fun getUnseenEvents(session: Session): Single<List<ServerRequestDTO>> = HTTP
-        .get(
+        .get<GetEventsDTO>(
             service = HTTPService(session.url),
             path = "/events",
             credentials = Credentials.create(sessionId = session.id, secret = session.secret),
-            parameters = mapOf("unseen" to "true"),
-            clazz = GetEventsDTO::class
+            parameters = mapOf("unseen" to "true")
         )
         .map { response ->
             val events = response.body.events ?: emptyList()
