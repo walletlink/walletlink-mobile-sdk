@@ -129,12 +129,14 @@ class WalletLink(private val notificationUrl: URL, context: Context) : WalletLin
         .zipOrEmpty()
         .asUnit()
 
-    override fun getRequest(eventId: String, sessionId: String, url: URL): Single<Optional<HostRequest>> {
+    override fun getRequest(eventId: String, sessionId: String, url: URL): Single<HostRequest> {
         val session = linkRepository.getSession(sessionId, url)
             ?: return Single.error(WalletLinkException.SessionNotFound)
 
         return linkRepository.getPendingRequests(session)
-            .map { requests -> requests.firstOrNull { eventId == it.hostRequestId.eventId }.toOptional() }
+            .map { requests ->
+                requests.firstOrNull { eventId == it.hostRequestId.eventId } ?: throw WalletLinkException.EventNotFound
+            }
     }
 
     // MARK: - Helpers

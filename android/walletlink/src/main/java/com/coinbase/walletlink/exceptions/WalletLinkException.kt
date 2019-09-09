@@ -27,6 +27,11 @@ sealed class WalletLinkException(msg: String) : Exception(msg) {
     object SessionNotFound : WalletLinkException("Unable to find session")
 
     /**
+     * An event for the session ID was not found
+     */
+    object EventNotFound : WalletLinkException("Event not found")
+
+    /**
      * Thrown when attempted to approve a host request that doesn't support it
      */
     object UnsupportedRequestMethodApproval : WalletLinkException("Unsupported request method approval")

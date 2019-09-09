@@ -104,7 +104,7 @@ interface WalletLinkInterface {
      *
      * @return A Single wrapping the HostRequest
      */
-    fun getRequest(eventId: String, sessionId: String, url: URL): Single<Optional<HostRequest>>
+    fun getRequest(eventId: String, sessionId: String, url: URL): Single<HostRequest>
 
     /**
      * Mark requests as seen to prevent future presentation
