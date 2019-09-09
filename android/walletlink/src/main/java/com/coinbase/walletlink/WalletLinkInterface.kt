@@ -3,7 +3,6 @@
 
 package com.coinbase.walletlink
 
-import com.coinbase.wallet.core.util.Optional
 import com.coinbase.walletlink.models.HostRequest
 import com.coinbase.walletlink.models.HostRequestId
 import com.coinbase.walletlink.models.ClientMetadataKey
