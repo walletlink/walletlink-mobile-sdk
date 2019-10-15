@@ -69,6 +69,15 @@ class SessionDAO(private val store: StoreInterface) {
     }
 
     /**
+     * Observe for all sessions updates
+     *
+     * @return [Observable] of all sessions
+     */
+    fun observeSessions(): Observable<List<Session>> = store.observe(StoreKeys.sessions)
+        .map { list -> list.toNullable()?.toList() ?: emptyList() }
+        .distinctUntilChanged()
+
+    /**
      * Observe for distinct stored sessionIds update
      *
      * @param url URL to filter sessions

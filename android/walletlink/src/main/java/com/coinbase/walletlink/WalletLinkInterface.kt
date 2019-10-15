@@ -27,6 +27,11 @@ interface WalletLinkInterface {
     fun sessions(): List<Session>
 
     /**
+     * Observe list of sessions
+     */
+    fun observeSessions(): Observable<List<Session>>
+
+    /**
      * Starts WalletLink connection with the server if a stored session exists. Otherwise, this is a noop. This method
      * should be called immediately on app launch.
      *

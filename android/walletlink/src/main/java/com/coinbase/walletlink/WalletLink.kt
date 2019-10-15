@@ -44,6 +44,8 @@ class WalletLink(private val notificationUrl: URL, context: Context) : WalletLin
 
     override fun sessions(): List<Session> = linkRepository.sessions
 
+    override fun observeSessions(): Observable<List<Session>> = linkRepository.observeSessions()
+
     override fun connect(userId: String, metadata: ConcurrentHashMap<ClientMetadataKey, String>) {
         val connections = ConcurrentHashMap<URL, WalletLinkConnection>()
         val sessionsByUrl = linkRepository.sessions.reduceIntoMap(HashMap<URL, List<Session>>()) { acc, session ->

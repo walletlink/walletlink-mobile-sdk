@@ -38,6 +38,13 @@ final class LinkRepository {
         return sessionDAO.getSessions(for: url)
     }
 
+    /// Observe all sessions
+    ///
+    /// - Returns: An observable of all sessions
+    func observeSessions() -> Observable<[Session]> {
+        return sessionDAO.observeSessions()
+    }
+
     /// Observe for distinct stored sessionIds update
     ///
     /// - Parameters:

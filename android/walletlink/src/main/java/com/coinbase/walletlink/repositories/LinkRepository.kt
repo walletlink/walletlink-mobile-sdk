@@ -80,6 +80,13 @@ internal class LinkRepository(context: Context) : Destroyable {
     fun getSessions(url: URL): List<Session> = sessionDAO.getSessions(url)
 
     /**
+     * Observe all sessions
+     *
+     * @return [Observable] of all sessions
+     */
+    fun observeSessions(): Observable<List<Session>> = sessionDAO.observeSessions()
+
+    /**
      * Observe for distinct stored sessionIds update
      *
      * @param url URL to filter sessions
