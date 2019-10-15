@@ -25,7 +25,7 @@ public class WalletLink: WalletLinkProtocol {
 
         requests = requestsSubject.asObservable()
     }
-    
+
     public func observeSessions() -> Observable<[Session]> {
         return linkRepository.observeSessions()
     }

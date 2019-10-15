@@ -9,7 +9,7 @@ public protocol WalletLinkProtocol: class {
 
     /// Get list of session
     var sessions: [Session] { get }
-    
+
     /// Observe list of sessions
     ///
     /// - Returns: an observable of all sessions

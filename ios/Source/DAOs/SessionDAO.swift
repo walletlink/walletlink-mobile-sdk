@@ -70,13 +70,13 @@ final class SessionDAO {
             self.store.set(.sessions, value: SessionList(items: sessions))
         }
     }
-    
+
     /// Observe for all session updates
     ///
     /// - Returns: An observable of all sessions
     func observeSessions() -> Observable<[Session]> {
         return store.observe(.sessions)
-            .map{ list in list?.items ?? [] }
+            .map { list in list?.items ?? [] }
             .distinctUntilChanged()
     }
 
