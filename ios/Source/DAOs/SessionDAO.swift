@@ -76,7 +76,7 @@ final class SessionDAO {
     /// - Returns: An observable of all sessions
     func observeSessions() -> Observable<[Session]> {
         return store.observe(.sessions)
-            .map { list in list?.items ?? [] }
+            .map { $0?.items ?? [] }
             .distinctUntilChanged()
     }
 

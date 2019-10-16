@@ -74,7 +74,7 @@ class SessionDAO(private val store: StoreInterface) {
      * @return [Observable] of all sessions
      */
     fun observeSessions(): Observable<List<Session>> = store.observe(StoreKeys.sessions)
-        .map { list -> list.toNullable()?.toList() ?: emptyList() }
+        .map { it.toNullable()?.toList() ?: emptyList() }
         .distinctUntilChanged()
 
     /**
