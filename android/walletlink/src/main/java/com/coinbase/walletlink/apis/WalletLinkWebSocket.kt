@@ -180,7 +180,7 @@ internal class WalletLinkWebSocket(val url: URL) {
 
     private fun createCallback(): WalletLinkCallback {
         val requestId = callbackSequence.incrementAndGet()
-        val subject = ReplaySubject.create<ClientResponseDTO>(1)
+        val subject = ReplaySubject.createWithSize<ClientResponseDTO>(1)
 
         pendingCallbacks[requestId] = subject
 
