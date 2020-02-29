@@ -11,5 +11,4 @@ enum class ClientMetadataKey(val rawValue: String) {
 
     // Flag to destroy secure session on both client and host side
     @Json(name = "__destroyed") Destroyed("__destroyed")
-
 }

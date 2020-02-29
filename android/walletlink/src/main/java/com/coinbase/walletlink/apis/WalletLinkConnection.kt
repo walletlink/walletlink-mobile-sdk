@@ -19,7 +19,6 @@ import com.coinbase.walletlink.exceptions.WalletLinkException
 import com.coinbase.walletlink.extensions.create
 import com.coinbase.walletlink.extensions.destroySession
 import com.coinbase.walletlink.extensions.logError
-import com.coinbase.walletlink.models.ClientMessageType
 import com.coinbase.walletlink.models.ClientMetadataKey
 import com.coinbase.walletlink.models.Dapp
 import com.coinbase.walletlink.models.EventType
@@ -67,7 +66,7 @@ internal class WalletLinkConnection private constructor(
         socket.incomingRequestsObservable
             .flatMap { linkRepository.getHostRequest(it, url).toObservable() }
             .unwrap()
-            .map {request ->
+            .map { request ->
                 val hostRequestId = request.hostRequestId
                 val session = linkRepository.sessions
                     .firstOrNull { it.url == hostRequestId.url && it.id == hostRequestId.sessionId }

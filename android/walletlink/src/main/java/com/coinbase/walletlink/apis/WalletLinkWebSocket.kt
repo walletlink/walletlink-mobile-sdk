@@ -238,19 +238,17 @@ internal class WalletLinkWebSocket(val url: URL) {
                     if (it.keys.filterIsInstance<String>().size != it.size ||
                         it.values.filterIsInstance<Any>().size != it.size) {
                         null
-                    }
-                    else {
+                    } else {
                         it as? Map<String, Any>
                     }
                 } ?: return
 
                 val destroyedValue = metadata[ClientMetadataKey.Destroyed.rawValue] as? String
-                if (destroyedValue !=  Strings.destroySession) return
+                if (destroyedValue != Strings.destroySession) return
 
                 Timber.i("Destroy session $sessionId")
 
                 disconnectSessionSubject.onNext(sessionId)
-
             }
         }
     }

@@ -173,7 +173,7 @@ class WalletLink(private val notificationUrl: URL, context: Context) : WalletLin
             .map { request -> request.toOptional() }
             .onErrorReturn { null }
             .unwrap()
-            .subscribeBy( onNext = { sessionId -> linkRepository.delete(url = conn.url, sessionId = sessionId) } )
+            .subscribeBy(onNext = { sessionId -> linkRepository.delete(url = conn.url, sessionId = sessionId) })
             .addTo(disposeBag)
     }
 }
