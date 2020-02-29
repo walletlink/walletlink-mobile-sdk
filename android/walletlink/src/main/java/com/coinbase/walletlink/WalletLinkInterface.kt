@@ -50,6 +50,7 @@ interface WalletLinkInterface {
      *
      * @param sessionId WalletLink host generated session ID
      * @param secret WalletLink host/guest shared secret
+     * @param version WalletLink server version
      * @param userId User ID to deliver push notifications to
      * @param url WalletLink server websocket URL
      * @param metadata client metadata forwarded to host once link is established
@@ -59,6 +60,7 @@ interface WalletLinkInterface {
     fun link(
         sessionId: String,
         secret: String,
+        version: String?,
         url: URL,
         userId: String,
         metadata: Map<ClientMetadataKey, String>
@@ -68,8 +70,10 @@ interface WalletLinkInterface {
      * Disconnect from given WalletLink session
      *
      * @param session Session to unlink
+     *
+     * @return A [Single] wrapping a [Unit] if operation was successful. Otherwise, an exception is thrown
      */
-    fun unlink(session: Session)
+    fun unlink(session: Session): Single<Unit>
 
     /**
      * Set metadata in all active sessions. This metadata will be forwarded to all the hosts

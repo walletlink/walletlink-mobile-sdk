@@ -3,6 +3,7 @@
 
 package com.coinbase.walletlink.apis
 
+import com.coinbase.wallet.core.extensions.Strings
 import com.coinbase.wallet.core.extensions.asJsonMap
 import com.coinbase.wallet.core.extensions.retryWithDelay
 import com.coinbase.wallet.core.extensions.takeSingle
@@ -17,6 +18,7 @@ import com.coinbase.walletlink.dtos.ServerRequestDTO
 import com.coinbase.walletlink.dtos.SetMetadataMessageDTO
 import com.coinbase.walletlink.dtos.SetSessionConfigMessageDTO
 import com.coinbase.wallet.core.interfaces.JsonSerializable
+import com.coinbase.walletlink.extensions.destroySession
 import com.coinbase.walletlink.extensions.logError
 import com.coinbase.walletlink.models.ClientMetadataKey
 import com.coinbase.walletlink.models.EventType
@@ -28,6 +30,7 @@ import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.ReplaySubject
+import timber.log.Timber
 import java.net.URL
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -41,14 +44,20 @@ internal class WalletLinkWebSocket(val url: URL) {
     private val serialScheduler = Schedulers.single()
     private val disposeBag = CompositeDisposable()
     private val connection = WebSocket(url)
-    private var callbackSequence = AtomicInteger()
-    private var incomingRequestsSubject = PublishSubject.create<ServerRequestDTO>()
-    private var pendingCallbacks = ConcurrentLruCache<Int, ReplaySubject<ClientResponseDTO>>(maxSize = 300)
+    private val callbackSequence = AtomicInteger()
+    private val incomingRequestsSubject = PublishSubject.create<ServerRequestDTO>()
+    private val disconnectSessionSubject = PublishSubject.create<String>()
+    private val pendingCallbacks = ConcurrentLruCache<Int, ReplaySubject<ClientResponseDTO>>(maxSize = 300)
 
     /**
      * Incoming WalletLink requests
      */
     val incomingRequestsObservable: Observable<ServerRequestDTO> = incomingRequestsSubject.hide()
+
+    /**
+     * Disconnect session requests
+     */
+    val disconnectSessionObservable: Observable<String> = disconnectSessionSubject.hide()
 
     /**
      * WalletLink Connection state
@@ -119,8 +128,8 @@ internal class WalletLinkWebSocket(val url: URL) {
      * @return A single wrapping `Boolean` to indicate operation was successful
      */
     fun setSessionConfig(
-        webhookId: String,
-        webhookUrl: URL,
+        webhookId: String?,
+        webhookUrl: URL?,
         metadata: Map<String, String>,
         sessionId: String
     ): Single<Boolean> {
@@ -129,7 +138,7 @@ internal class WalletLinkWebSocket(val url: URL) {
             id = callback.requestId,
             sessionId = sessionId,
             webhookId = webhookId,
-            webhookUrl = webhookUrl.toString(),
+            webhookUrl = webhookUrl?.toString(),
             metadata = metadata
         )
 
@@ -220,6 +229,28 @@ internal class WalletLinkWebSocket(val url: URL) {
             ServerMessageType.Event -> {
                 val request = ServerRequestDTO.fromJsonString(jsonString) ?: return
                 receivedServerRequest(request)
+            }
+            ServerMessageType.GetSessionConfigOK, ServerMessageType.SessionConfigUpdated -> {
+                val sessionId = (json["sessionId"] as? String) ?: return
+
+                @Suppress("UNCHECKED_CAST")
+                val metadata: Map<String, Any> = (json["metadata"] as? Map<*, *>)?.let {
+                    if (it.keys.filterIsInstance<String>().size != it.size ||
+                        it.values.filterIsInstance<Any>().size != it.size) {
+                        null
+                    }
+                    else {
+                        it as? Map<String, Any>
+                    }
+                } ?: return
+
+                val destroyedValue = metadata[ClientMetadataKey.Destroyed.rawValue] as? String
+                if (destroyedValue !=  Strings.destroySession) return
+
+                Timber.i("Destroy session $sessionId")
+
+                disconnectSessionSubject.onNext(sessionId)
+
             }
         }
     }

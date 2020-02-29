@@ -25,6 +25,16 @@ internal enum class ServerMessageType(val rawValue: String) {
     @Json(name = "PublishEventOK") PublishEventOK("PublishEventOK"),
 
     /**
+     * Session configuration were updated
+     */
+    @Json(name = "SessionConfigUpdated") SessionConfigUpdated("SessionConfigUpdated"),
+
+    /**
+     * A successful response for session configuration request
+     */
+    @Json(name = "SessionConfigUpdated") GetSessionConfigOK("GetSessionConfigOK"),
+
+    /**
      * An error response to a client initiated request
      */
     @Json(name = "Fail") Fail("Fail");
@@ -33,9 +43,8 @@ internal enum class ServerMessageType(val rawValue: String) {
      * Determine whether server message is a successful one
      */
     val isOK: Boolean get() = when (this) {
-        OK -> true
-        PublishEventOK -> true
-        else -> false
+        OK, PublishEventOK, SessionConfigUpdated, GetSessionConfigOK -> true
+        Fail, Event -> false
     }
 
     companion object {

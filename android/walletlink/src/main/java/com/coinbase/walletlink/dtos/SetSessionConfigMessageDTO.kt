@@ -21,8 +21,8 @@ internal data class SetSessionConfigMessageDTO(
     val type: ClientMessageType = ClientMessageType.SetSessionConfig,
     val id: Int,
     val sessionId: String,
-    val webhookId: String,
-    val webhookUrl: String,
+    val webhookId: String?,
+    val webhookUrl: String?,
     val metadata: Map<String, String>
 ) : JsonSerializable {
     @ExperimentalUnsignedTypes

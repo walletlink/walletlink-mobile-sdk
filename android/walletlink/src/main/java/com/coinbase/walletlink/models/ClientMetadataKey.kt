@@ -7,5 +7,9 @@ import com.squareup.moshi.Json
 
 enum class ClientMetadataKey(val rawValue: String) {
     // Client ethereum address metadata key
-    @Json(name = "EthereumAddress") EthereumAddress("EthereumAddress")
+    @Json(name = "EthereumAddress") EthereumAddress("EthereumAddress"),
+
+    // Flag to destroy secure session on both client and host side
+    @Json(name = "__destroyed") Destroyed("__destroyed")
+
 }

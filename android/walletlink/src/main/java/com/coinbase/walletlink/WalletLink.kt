@@ -10,6 +10,7 @@ import com.coinbase.wallet.core.extensions.unwrap
 import com.coinbase.wallet.core.extensions.zipOrEmpty
 import com.coinbase.wallet.core.util.BoundedSet
 import com.coinbase.wallet.core.util.Optional
+import com.coinbase.wallet.core.util.toOptional
 import com.coinbase.walletlink.apis.WalletLinkConnection
 import com.coinbase.walletlink.exceptions.WalletLinkException
 import com.coinbase.walletlink.models.HostRequest
@@ -21,6 +22,7 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
+import io.reactivex.rxkotlin.subscribeBy
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.net.URL
@@ -79,12 +81,13 @@ class WalletLink(private val notificationUrl: URL, context: Context) : WalletLin
     override fun link(
         sessionId: String,
         secret: String,
+        version: String?,
         url: URL,
         userId: String,
         metadata: Map<ClientMetadataKey, String>
     ): Single<Unit> {
         connections[url]?.let { connection ->
-            return connection.link(sessionId = sessionId, secret = secret)
+            return connection.link(sessionId = sessionId, secret = secret, version = version)
         }
 
         val connection = WalletLinkConnection(
@@ -97,12 +100,17 @@ class WalletLink(private val notificationUrl: URL, context: Context) : WalletLin
 
         connections[url] = connection
 
-        return connection.link(sessionId = sessionId, secret = secret)
+        return connection.link(sessionId = sessionId, secret = secret, version = version)
             .map { observeConnection(connection) }
             .doOnError { connections.remove(url) }
     }
 
-    override fun unlink(session: Session) = linkRepository.delete(session.url, session.id)
+    override fun unlink(session: Session): Single<Unit> {
+        val connection = connections[session.url]
+            ?: return Single.error(WalletLinkException.NoConnectionFound(session.url))
+        return connection.destroySession(sessionId = session.id)
+            .map { linkRepository.delete(url = session.url, sessionId = session.id) }
+    }
 
     override fun setMetadata(key: ClientMetadataKey, value: String): Single<Unit> = connections.values
             .map { it.setMetadata(key = key, value = value).asUnit().onErrorReturn { Single.just(Unit) } }
@@ -158,6 +166,14 @@ class WalletLink(private val notificationUrl: URL, context: Context) : WalletLin
                 processedRequestIds.add(hostRequestId)
                 requestsSubject.onNext(request)
             }
+            .addTo(disposeBag)
+
+        conn.disconnectSessionObservable
+            .observeOn(requestsScheduler)
+            .map { request -> request.toOptional() }
+            .onErrorReturn { null }
+            .unwrap()
+            .subscribeBy( onNext = { sessionId -> linkRepository.delete(url = conn.url, sessionId = sessionId) } )
             .addTo(disposeBag)
     }
 }

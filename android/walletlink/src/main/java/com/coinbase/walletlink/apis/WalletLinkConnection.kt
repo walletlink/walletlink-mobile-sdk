@@ -3,6 +3,7 @@
 
 package com.coinbase.walletlink.apis
 
+import com.coinbase.wallet.core.extensions.Strings
 import com.coinbase.wallet.core.extensions.asUnit
 import com.coinbase.wallet.core.extensions.takeSingle
 import com.coinbase.wallet.core.extensions.toPrefixedHexString
@@ -16,7 +17,9 @@ import com.coinbase.walletlink.dtos.Web3ResponseDTO
 import com.coinbase.walletlink.dtos.asJsonString
 import com.coinbase.walletlink.exceptions.WalletLinkException
 import com.coinbase.walletlink.extensions.create
+import com.coinbase.walletlink.extensions.destroySession
 import com.coinbase.walletlink.extensions.logError
+import com.coinbase.walletlink.models.ClientMessageType
 import com.coinbase.walletlink.models.ClientMetadataKey
 import com.coinbase.walletlink.models.Dapp
 import com.coinbase.walletlink.models.EventType
@@ -41,17 +44,19 @@ import java.util.concurrent.TimeUnit
 private data class JoinSessionEvent(val sessionId: String, val joined: Boolean)
 
 internal class WalletLinkConnection private constructor(
-    private val url: URL,
     private val userId: String,
     private val notificationUrl: URL,
     private val linkRepository: LinkRepository,
-    private val metadata: ConcurrentHashMap<ClientMetadataKey, String>
+    private val metadata: ConcurrentHashMap<ClientMetadataKey, String>,
+    // Websocket connection URL
+    val url: URL
 ) {
     private val requestsSubject = PublishSubject.create<HostRequest>()
     private val joinSessionEventsSubject = PublishSubject.create<JoinSessionEvent>()
     private val socket = WalletLinkWebSocket(url.appendingPathComponent("rpc"))
     private val disposeBag = CompositeDisposable()
     private val isConnectedObservable: Observable<Boolean> = socket.connectionStateObservable.map { it.isConnected }
+    val disconnectSessionObservable = socket.disconnectSessionObservable
 
     /**
      * Incoming WalletLink host requests
@@ -62,6 +67,28 @@ internal class WalletLinkConnection private constructor(
         socket.incomingRequestsObservable
             .flatMap { linkRepository.getHostRequest(it, url).toObservable() }
             .unwrap()
+            .map {request ->
+                val hostRequestId = request.hostRequestId
+                val session = linkRepository.sessions
+                    .firstOrNull { it.url == hostRequestId.url && it.id == hostRequestId.sessionId }
+
+                if (session == null || session.version == null || request is HostRequest.DappPermission) {
+                    return@map request
+                }
+
+                // for WalletLink v > 1, grab dapp details from EIP1102 request
+                linkRepository.saveSession(
+                    url = session.url,
+                    sessionId = session.id,
+                    secret = session.secret,
+                    version = session.version,
+                    dappName = hostRequestId.dappName,
+                    dappImageURL = hostRequestId.dappImageURL,
+                    dappURL = hostRequestId.dappURL
+                )
+
+                request
+            }
             .subscribe { requestsSubject.onNext(it) }
             .addTo(disposeBag)
 
@@ -75,11 +102,11 @@ internal class WalletLinkConnection private constructor(
         linkRepository: LinkRepository,
         metadata: Map<ClientMetadataKey, String>
     ) : this(
-        url = url,
         userId = userId,
         notificationUrl = notificationUrl,
         linkRepository = linkRepository,
-        metadata = ConcurrentHashMap(metadata)
+        metadata = ConcurrentHashMap(metadata),
+        url = url
     )
 
     /**
@@ -95,10 +122,11 @@ internal class WalletLinkConnection private constructor(
      *
      * @param sessionId WalletLink host generated session ID
      * @param secret WalletLink host/guest shared secret
+     * @param version WalletLink server version
      *
      * @return A single wrapping `Unit` if connection was successful. Otherwise, an exception is thrown
      */
-    fun link(sessionId: String, secret: String): Single<Unit> {
+    fun link(sessionId: String, secret: String, version: String?): Single<Unit> {
         val session = linkRepository.getSession(id = sessionId, url = url)
 
         if (session != null && session.secret == secret) {
@@ -106,7 +134,17 @@ internal class WalletLinkConnection private constructor(
         }
 
         return isConnectedObservable
-            .doOnSubscribe { linkRepository.saveSession(url = url, sessionId = sessionId, secret = secret) }
+            .doOnSubscribe {
+                linkRepository.saveSession(
+                    url = url,
+                    sessionId = sessionId,
+                    secret = secret,
+                    version = version,
+                    dappName = null,
+                    dappImageURL = null,
+                    dappURL = null
+                )
+            }
             .filter { it }
             .takeSingle()
             .flatMap { joinSessionEventsSubject.filter { it.sessionId == sessionId }.takeSingle() }
@@ -139,6 +177,20 @@ internal class WalletLinkConnection private constructor(
             .zipOrEmpty()
             .asUnit()
     }
+
+    /**
+    * Destroy session
+    *
+    * @param sessionId Session ID scanned offline (QR code, NFC, etc)
+    *
+    * @return A [Single] wrapping [Boolean] to indicate operation was successful
+    */
+    fun destroySession(sessionId: String): Single<Boolean> = socket.setSessionConfig(
+            webhookId = null,
+            webhookUrl = null,
+            metadata = mapOf(ClientMetadataKey.Destroyed.rawValue to Strings.destroySession),
+            sessionId = sessionId
+        )
 
     /**
      * Send signature request approval to the requesting host
