@@ -32,7 +32,7 @@ internal enum class ServerMessageType(val rawValue: String) {
     /**
      * A successful response for session configuration request
      */
-    @Json(name = "SessionConfigUpdated") GetSessionConfigOK("GetSessionConfigOK"),
+    @Json(name = "GetSessionConfigOK") GetSessionConfigOK("GetSessionConfigOK"),
 
     /**
      * An error response to a client initiated request
