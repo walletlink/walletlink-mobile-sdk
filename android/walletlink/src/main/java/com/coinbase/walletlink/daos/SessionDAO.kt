@@ -60,7 +60,8 @@ class SessionDAO(private val store: StoreInterface) {
         dappURL: URL?
     ) = accessLock.withLock {
         val sessions = (store.get(StoreKeys.sessions) ?: emptyArray())
-            .filter { it.id != sessionId && it.url != url }.toMutableList()
+            .filter { it.id != sessionId || it.url != url }
+            .toMutableList()
 
         val session = Session(
             id = sessionId,
@@ -85,7 +86,8 @@ class SessionDAO(private val store: StoreInterface) {
      */
     fun delete(url: URL, sessionId: String) = accessLock.withLock {
         val sessionIds = (store.get(StoreKeys.sessions) ?: arrayOf())
-            .filter { it.id != sessionId || it.url != url }.toMutableList()
+            .filter { it.id != sessionId || it.url != url }
+            .toMutableList()
 
         store.set(StoreKeys.sessions, sessionIds.toTypedArray())
     }

@@ -55,6 +55,7 @@ internal class WalletLinkConnection private constructor(
     private val socket = WalletLinkWebSocket(url.appendingPathComponent("rpc"))
     private val disposeBag = CompositeDisposable()
     private val isConnectedObservable: Observable<Boolean> = socket.connectionStateObservable.map { it.isConnected }
+
     val disconnectSessionObservable = socket.disconnectSessionObservable
 
     /**
