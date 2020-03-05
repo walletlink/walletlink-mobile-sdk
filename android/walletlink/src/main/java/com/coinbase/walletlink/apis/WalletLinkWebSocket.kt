@@ -5,6 +5,7 @@ package com.coinbase.walletlink.apis
 
 import com.coinbase.wallet.core.extensions.Strings
 import com.coinbase.wallet.core.extensions.asJsonMap
+import com.coinbase.wallet.core.extensions.asMapOfType
 import com.coinbase.wallet.core.extensions.retryWithDelay
 import com.coinbase.wallet.core.extensions.takeSingle
 import com.coinbase.wallet.core.util.ConcurrentLruCache
@@ -233,15 +234,7 @@ internal class WalletLinkWebSocket(val url: URL) {
             ServerMessageType.GetSessionConfigOK, ServerMessageType.SessionConfigUpdated -> {
                 val sessionId = (json["sessionId"] as? String) ?: return
 
-                @Suppress("UNCHECKED_CAST")
-                val metadata: Map<String, Any> = (json["metadata"] as? Map<*, *>)?.let {
-                    if (it.keys.filterIsInstance<String>().size != it.size ||
-                        it.values.filterIsInstance<Any>().size != it.size) {
-                        null
-                    } else {
-                        it as? Map<String, Any>
-                    }
-                } ?: return
+                val metadata: Map<String, Any> = (json["metadata"] as? Map<*, *>).asMapOfType() ?: return
 
                 val destroyedValue = metadata[ClientMetadataKey.Destroyed.rawValue] as? String
                 if (destroyedValue != Strings.destroySession) return
