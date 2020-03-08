@@ -72,7 +72,7 @@ internal class WalletLinkConnection private constructor(
                 val session = linkRepository.sessions
                     .firstOrNull { it.url == hostRequestId.url && it.id == hostRequestId.sessionId }
 
-                if (session?.version == null || request is HostRequest.DappPermission) {
+                if (session?.version == null || request !is HostRequest.DappPermission) {
                     return@map request
                 }
 
