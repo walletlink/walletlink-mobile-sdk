@@ -3,6 +3,7 @@
 
 package com.coinbase.walletlink.models
 
+import com.squareup.moshi.JsonClass
 import java.net.URL
 
 /**
@@ -16,6 +17,7 @@ import java.net.URL
  * @property dappImageURL image that initiated the new wallet link connection
  * @property dappURL URL that initiated the new wallet link connection
  */
+@JsonClass(generateAdapter = true)
 data class Session(
     val id: String,
     val secret: String,
